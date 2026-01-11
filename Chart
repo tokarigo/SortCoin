@@ -1,64 +1,55 @@
-┌──────────────────────────────┐
- │            START             │
- └───────────────┬──────────────┘
-                 │
-                 ▼
- ┌──────────────────────────────┐
- │ TRY 1: Weigh A vs B           │
- └───────┬───────────┬──────────┘
-         │           │
-         │ BALANCED  │ NOT BALANCED
-         │           │
-         ▼           ▼
- ┌──────────────────────────┐   ┌────────────────────────────────┐
- │ Fake in C                │   │ Fake in A or B                  │
- │ (A and B genuine)        │   │ (C genuine)                     │
- └───────────┬──────────────┘   └───────────────┬────────────────┘
-             │                                  │
-             ▼                                  ▼
- ┌──────────────────────────────┐   ┌──────────────────────────────┐
- │ TRY 2: Weigh C1+C2 vs A1+A2  │   │ TRY 2 (SWAP):                 │
- └───────┬───────────┬──────────┘   │ Weigh A1+B2+B3 vs B1+C2+A3   │
-         │           │               └───────┬───────────┬─────────┘
-         │ BALANCED  │ NOT BALANCED           │ BALANCED  │ NOT BALANCED
-         │           │                        │           │
-         ▼           ▼                        ▼           ▼
- ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────────┐
- │ Fake in C3 or C4     │   │ Fake in C1 or C2     │   │ Compare direction vs TRY1 │
- └──────────┬───────────┘   └──────────┬───────────┘   └───────────┬──────────────┘
-            │                          │                              │
-            ▼                          ▼                              ▼
- ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────┬─────────────┐
- │ TRY 3: C3 vs A3     │   │ TRY 3: C1 vs A1     │   │ Same direction │ Flipped      │
- └──────────┬───────────┘   └──────────┬───────────┘   └──────┬───────┴──────┬──────┘
-            │                          │                          │              │
-            ▼                          ▼                          ▼              ▼
- ┌──────────────────────────────┐  ┌──────────────────────────────┐  ┌──────────────────────┐
- │ DONE: fake found             │  │ DONE: fake found             │  │ Fake in A1 or B1     │
- │ (C4 weight unknown if fake)  │  │ (C2 or C1 weight known)     │  └──────────┬───────────┘
- └──────────────────────────────┘  └──────────────────────────────┘             │
-                                                                                 ▼
-                                                                    ┌──────────────────────┐
-                                                                    │ TRY 3: A1 vs C1     │
-                                                                    └──────────┬───────────┘
-                                                                               │
-                                                                               ▼
-                                                                    ┌──────────────────────────────┐
-                                                                    │ DONE: fake found             │
-                                                                    └──────────────────────────────┘
-
-                                         (from “Flipped” branch)
-                                              │
-                                              ▼
-                               ┌──────────────────────────────────┐
-                               │ Fake in B2, B3, or A3            │
-                               └───────────────┬──────────────────┘
-                                               ▼
-                               ┌──────────────────────────────────┐
-                               │ TRY 3: Weigh B2+A3 vs C2+C3      │
-                               └───────────────┬──────────────────┘
-                                               │
-                                               ▼
-                               ┌──────────────────────────────────┐
-                               │ DONE: fake found                 │
-                               └──────────────────────────────────┘
+flowchart TD
+    Start["START: 12 coins (A1-4, B1-4, C1-4)<br>One fake, heavy or light"]
+    
+    Start --> W1["TRY 1: Weigh A1-A4 vs B1-B4"]
+    
+    W1 -->|BALANCED| Balanced1["Fake in C group (C1-4)<br>A & B are genuine"]
+    W1 -->|NOT BALANCED<br>Assume A > B| NotBalanced1["Fake in A or B<br>C group is genuine"]
+    
+    %% BALANCED BRANCH (Fake in C)
+    Balanced1 --> W2A["TRY 2: Weigh C1+C2 vs A1+A2<br>(A1,A2 known genuine)"]
+    
+    W2A -->|BALANCED| Balanced2A["Fake in C3 or C4"]
+    W2A -->|NOT BALANCED| NotBalanced2A["Fake in C1 or C2<br>Direction tells if heavy/light"]
+    
+    Balanced2A --> W3A1["TRY 3: Weigh C3 vs A1<br>(A1 known genuine)"]
+    NotBalanced2A --> W3A2["TRY 3: Weigh C1 vs A1<br>(A1 known genuine)"]
+    
+    W3A1 -->|BALANCED| ResultA1["C4 is fake<br>(Unknown if heavy/light)"]
+    W3A1 -->|NOT BALANCED| ResultA2["C3 is fake<br>Direction reveals heavy/light"]
+    
+    W3A2 -->|BALANCED| ResultA3["C2 is fake<br>Direction from TRY 2 reveals heavy/light"]
+    W3A2 -->|NOT BALANCED| ResultA4["C1 is fake<br>Direction reveals heavy/light"]
+    
+    %% NOT BALANCED BRANCH (Fake in A or B)
+    NotBalanced1 --> W2B["TRY 2 (Swap):<br>Weigh A1+B2+B3 vs B1+C2+A3<br>(C2 known genuine)"]
+    
+    W2B -->|BALANCED| Balanced2B["Fake in A2, A4, or B4<br>(Coins not weighed in TRY 2)"]
+    W2B -->|NOT BALANCED| NotBalanced2B["Compare direction with TRY 1"]
+    
+    Balanced2B --> W3B1["TRY 3: Weigh A2 vs A4"]
+    
+    W3B1 -->|BALANCED| ResultB1["B4 is fake<br>Light (since B side was lighter in TRY 1)"]
+    W3B1 -->|NOT BALANCED| ResultB2["The heavier coin is fake<br>(A was heavier in TRY 1,<br>so fake in A must be heavy)"]
+    
+    NotBalanced2B -->|SAME DIRECTION<br>Left > Right in both| SameDir["Fake in A1 or B1"]
+    NotBalanced2B -->|FLIPPED DIRECTION<br>Left > Right in TRY 1,<br>Left < Right in TRY 2| FlippedDir["Fake in B2, B3, or A3"]
+    
+    SameDir --> W3B2["TRY 3: Weigh A1 vs C1<br>(C1 known genuine)"]
+    FlippedDir --> W3B3["TRY 3: Weigh B2+A3 vs C2+C3<br>(C2,C3 known genuine)"]
+    
+    W3B2 -->|BALANCED| ResultB3["B1 is fake<br>Light (since B side was lighter in TRY 1)"]
+    W3B2 -->|NOT BALANCED| ResultB4["A1 is fake<br>Heavy (since A side was heavier in TRY 1)"]
+    
+    W3B3 -->|BALANCED| ResultB5["B3 is fake<br>Light (since B side was lighter in TRY 1)"]
+    W3B3 -->|LEFT > RIGHT| ResultB6["A3 is fake<br>Heavy (since A side was heavier in TRY 1)"]
+    W3B3 -->|LEFT < RIGHT| ResultB7["B2 is fake<br>Light (since B side was lighter in TRY 1)"]
+    
+    %% Styling
+    classDef start fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef weigh fill:#fff3e0,stroke:#f57c00
+    classDef result fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    
+    class Start start
+    class W1,W2A,W2B,W3A1,W3A2,W3B1,W3B2,W3B3 weigh
+    class ResultA1,ResultA2,ResultA3,ResultA4,ResultB1,ResultB2,ResultB3,ResultB4,ResultB5,ResultB6,ResultB7 result
