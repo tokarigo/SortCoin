@@ -130,14 +130,15 @@ int main(void) {
 
         /* ============ TRY 2 (C PATH) ============ */
         case TRY2_C12: {
-            printf("\nTRY 2: Weighing C1+C2 vs A1+A2\n");
-            event = weigh(C[0]+C[1], A[0]+A[1]);
+            printf("\nTRY 2: Weighing C1+C2+C3 vs A1+A2+A3\n");
+            event = weigh(C[0]+C[1]+C[2], A[0]+A[1]+A[2]);
 
             if (event == BALANCED) {
-                printf("Coins C1 and C2 are genuine, fake is in C3 or C4. TRY 3.\n");
+                printf("Coins C1/ C2/ C3 are genuine, fake is C4. TRY 3.\n");
                 state = TRY3_C3_A3;
             } else {
-                printf("Fake is in C1 or C2. TRY 3.\n");
+                printf("Fake is in C1/ C2/C3. TRY 3.\n");
+                leftrel  = (event == LEFT)  ? HEAVIER : LIGHTER;
                 state = TRY3_C1_A1;
             }
             break;
@@ -167,28 +168,32 @@ int main(void) {
         /* ============ TRY 3 STATES ============ */
 
         case TRY3_C1_A1:
-            printf("\nTRY 3: Weighing C1 vs A1\n");
-            event = weigh(C[0], A[0]);
+            printf("\nTRY 3: Weighing C1 vs C2 (C3 set aside)\n");
+            event = weigh(C[0], C[1]);
             if (event == BALANCED) {
-                sprintf(fake_coin, "C2");
-                fake_relation = (C[1] > 1) ? HEAVIER : LIGHTER;
-            } else {
-                sprintf(fake_coin, "C1");
-                fake_relation = (C[0] > A[0]) ? HEAVIER : LIGHTER;
+                sprintf(fake_coin, "C3");
+                fake_relation = leftrel;
+               printf("\nTRY 3:  C1 and C2 are equal -> fake is C3\n");             
+            } 
+            else {
+                if (((event == LEFT) && (leftrel == HEAVIER)) || ( event ==RIGHT) &&( leftrel ==LIGHTER)) {
+                  sprintf(fake_coin, "C1");
+                  fake_relation = leftrel;
+                	}
+                else {
+                  sprintf(fake_coin, "C2");
+                  fake_relation = leftrel;
+                }
+
             }
             state = DONE;
             break;
 
         case TRY3_C3_A3:
-            printf("\nTRY 3: Weighing C3 vs A3\n");
-            event = weigh(C[2], A[2]);
-            if (event == BALANCED) {
-                sprintf(fake_coin, "C4");
-                fake_relation = UNKNOWN;
-            } else {
-                sprintf(fake_coin, "C3");
-                fake_relation = (C[2] > A[2]) ? HEAVIER : LIGHTER;
-            }
+            printf("\nTRY 3: Weighing C4 vs A4\n");
+            event = weigh(C[3], A[3]);
+            sprintf(fake_coin, "C4");
+            fake_relation = (C[3] > A[3]) ? HEAVIER : LIGHTER;
             state = DONE;
             break;
 
